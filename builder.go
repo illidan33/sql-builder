@@ -1,4 +1,4 @@
-package sql_builder
+package sql-builder
 
 import (
 	"fmt"
