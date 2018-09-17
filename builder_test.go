@@ -46,13 +46,26 @@ func TestSelect(t *testing.T) {
 
 func TestUpdateSqlBuilder_UpdateByStruct(t *testing.T) {
 	skill := Skill{
+		Condition: "",
 		SkillType: 1,
 	}
 
 	builder := Update("skill")
 	builder.UpdateByStruct(skill, true)
+	builder.WhereEq("skill_type", 1)
+	builder.WhereIn("skill_type", []interface{}{1, 2})
+	builder.WhereOr([]WhereOrCondition{
+		{
+			FieldName:  "skill_type",
+			WhereType:  WHERE_TYPE_EQ,
+			FieldValue: 1,
+		},
+	})
+	builder.WhereGt("skill_type", 1)
+	builder.WhereLt("skill_type", 1)
+	builder.WhereLike("condition", "vic")
 
-	if builder.String() != "UPDATE `skill` SET `skill_type`=?;" {
+	if builder.String() != "UPDATE `skill` SET `skill_type`=? WHERE `skill_type`=? AND skill_type IN (?,?) OR (skill_type=?) AND `skill_type`>? AND `skill_type`<? AND `condition` LIKE ?;" {
 		t.Fatalf("Error -- sql string: %s \n", builder.String())
 	}
 }

@@ -73,6 +73,19 @@ skill := Skill{
 
 builder := Update("skill")
 builder.UpdateByStruct(skill, true) // 第二个参数：是否跳过空值，如果为true，会跳过空字符串和0值
+// 更新条件
+builder.WhereEq("skill_type", 1)
+builder.WhereIn("skill_type", []interface{}{1, 2})
+builder.WhereOr([]WhereOrCondition{
+    {
+        FieldName:  "skill_type",
+        WhereType:  WHERE_TYPE_EQ,
+        FieldValue: 1,
+    },
+})
+builder.WhereGt("skill_type", 1)
+builder.WhereLt("skill_type", 1)
+builder.WhereLike("condition", "vic")
 
 Dbconn.Query(builder.String(), builder.Args()...) // 放入数据库查询中
 ```
