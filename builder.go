@@ -312,7 +312,7 @@ func (build *SqlBuilder) WhereOr(args []WhereOrCondition) {
 			break
 		}
 
-		conditionStr := fmt.Sprintf("%s%s%s", value.FieldName, condition, build.flag)
+		conditionStr := fmt.Sprintf("`%s`%s%s", value.FieldName, condition, build.flag)
 		if orStr == "" {
 			orStr = conditionStr
 		} else {
@@ -324,7 +324,7 @@ func (build *SqlBuilder) WhereOr(args []WhereOrCondition) {
 	if build.whereStr == "" {
 		build.whereStr = orStr
 	} else {
-		build.whereStr = fmt.Sprintf("%s OR (%s)", build.whereStr, orStr)
+		build.whereStr = fmt.Sprintf("(%s) OR (%s)", build.whereStr, orStr)
 	}
 }
 

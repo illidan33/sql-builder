@@ -29,6 +29,9 @@ func TestSelect(t *testing.T) {
 	builder.SetSearchFields("`condition`,`skill_type`")
 	builder.WhereEq("skill_type", 1)
 	builder.WhereIn("skill_type", []interface{}{1, 2})
+	builder.WhereGt("skill_type", 1)
+	builder.WhereLt("skill_type", 1)
+	builder.WhereLike("condition", "vic")
 	builder.WhereOr([]WhereOrCondition{
 		{
 			FieldName:  "skill_type",
@@ -36,10 +39,7 @@ func TestSelect(t *testing.T) {
 			FieldValue: 1,
 		},
 	})
-	builder.WhereGt("skill_type", 1)
-	builder.WhereLt("skill_type", 1)
-	builder.WhereLike("condition", "vic")
-	if builder.String() != "SELECT `condition`,`skill_type` FROM `skill` WHERE `skill_type`=? AND skill_type IN (?,?) OR (skill_type=?) AND `skill_type`>? AND `skill_type`<? AND `condition` LIKE ?;" {
+	if builder.String() != "SELECT `condition`,`skill_type` FROM `skill` WHERE (`skill_type`=? AND skill_type IN (?,?) AND `skill_type`>? AND `skill_type`<? AND `condition` LIKE ?) OR (`skill_type`=?);" {
 		t.Fatalf("Error -- sql string: %s \n", builder.String())
 	}
 }
@@ -54,18 +54,23 @@ func TestUpdateSqlBuilder_UpdateByStruct(t *testing.T) {
 	builder.UpdateByStruct(skill, true)
 	builder.WhereEq("skill_type", 1)
 	builder.WhereIn("skill_type", []interface{}{1, 2})
-	builder.WhereOr([]WhereOrCondition{
-		{
-			FieldName:  "skill_type",
-			WhereType:  WHERE_TYPE_EQ,
-			FieldValue: 1,
-		},
-	})
 	builder.WhereGt("skill_type", 1)
 	builder.WhereLt("skill_type", 1)
 	builder.WhereLike("condition", "vic")
+	builder.WhereOr([]WhereOrCondition{
+		{
+			FieldName:  "skill_type",
+			WhereType:  WHERE_TYPE_LT,
+			FieldValue: 5,
+		},
+		{
+			FieldName:  "skill_type",
+			WhereType:  WHERE_TYPE_GT,
+			FieldValue: 1,
+		},
+	})
 
-	if builder.String() != "UPDATE `skill` SET `skill_type`=? WHERE `skill_type`=? AND skill_type IN (?,?) OR (skill_type=?) AND `skill_type`>? AND `skill_type`<? AND `condition` LIKE ?;" {
+	if builder.String() != "UPDATE `skill` SET `skill_type`=? WHERE (`skill_type`=? AND skill_type IN (?,?) AND `skill_type`>? AND `skill_type`<? AND `condition` LIKE ?) OR (`skill_type`<? AND `skill_type`>?);" {
 		t.Fatalf("Error -- sql string: %s \n", builder.String())
 	}
 }
