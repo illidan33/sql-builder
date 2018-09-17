@@ -72,10 +72,14 @@ builder.WhereOr([]WhereOrCondition{
         FieldValue: 1,
     },
 })
+builder.GroupBy("`id`,`skill_type`")
+builder.OrderBy("`skill_type` asc")
+builder.Limit(0, 20)
 
 Dbconn.Query(builder.String(), builder.Args()...) // 放入数据库查询中
 
-// sql：SELECT `condition`,`skill_type` FROM `skill` WHERE (`skill_type`=? AND skill_type IN (?,?) AND `skill_type`>? AND `skill_type`<? AND `condition` LIKE ?) OR (`skill_type`=?);
+// sql：SELECT `condition`,`skill_type` FROM `skill` WHERE (`skill_type`=? AND skill_type IN (?,?) AND `skill_type`>? AND `skill_type`<? AND `condition` LIKE ?) OR (`skill_type`=?) GROUP BY `id`,`skill_type` ORDER BY `skill_type` asc LIMIT 0,20;
+// 需要自己注意group by/order by/limit的顺序
 ```
 
 ### 插入

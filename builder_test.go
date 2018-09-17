@@ -39,7 +39,11 @@ func TestSelect(t *testing.T) {
 			FieldValue: 1,
 		},
 	})
-	if builder.String() != "SELECT `condition`,`skill_type` FROM `skill` WHERE (`skill_type`=? AND skill_type IN (?,?) AND `skill_type`>? AND `skill_type`<? AND `condition` LIKE ?) OR (`skill_type`=?);" {
+	builder.GroupBy("`id`,`skill_type`")
+	builder.OrderBy("`skill_type` asc")
+	builder.Limit(0, 20)
+
+	if builder.String() != "SELECT `condition`,`skill_type` FROM `skill` WHERE (`skill_type`=? AND skill_type IN (?,?) AND `skill_type`>? AND `skill_type`<? AND `condition` LIKE ?) OR (`skill_type`=?) GROUP BY `id`,`skill_type` ORDER BY `skill_type` asc LIMIT 0,20;" {
 		t.Fatalf("Error -- sql string: %s \n", builder.String())
 	}
 }
