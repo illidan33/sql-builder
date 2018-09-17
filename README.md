@@ -1,6 +1,12 @@
 # sql-builder
 a tool to create sql string for golang
 
+# 安装
+
+```
+go get -u github.com/illidan33/sql-builder
+```
+
 # 实例
 
 ### 查询
