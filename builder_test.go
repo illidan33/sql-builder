@@ -12,6 +12,7 @@ type Skill struct {
 
 func TestSelectSqlBuilder_SelectByStruct(t *testing.T) {
 	skill := Skill{
+		Condition: "",
 		SkillType: 1,
 	}
 
@@ -19,6 +20,26 @@ func TestSelectSqlBuilder_SelectByStruct(t *testing.T) {
 	builder.SelectByStruct(skill)
 
 	if builder.String() != "SELECT `condition`,`desc`,`skill_type` FROM `skill` WHERE `skill_type`=?;" {
+		t.Fatalf("Error -- sql string: %s \n", builder.String())
+	}
+}
+
+func TestSelect(t *testing.T) {
+	builder := Select("skill")
+	builder.SetSearchFields("`condition`,`skill_type`")
+	builder.WhereEq("skill_type", 1)
+	builder.WhereIn("skill_type", []interface{}{1, 2})
+	builder.WhereOr([]WhereOrCondition{
+		{
+			FieldName:  "skill_type",
+			WhereType:  WHERE_TYPE_EQ,
+			FieldValue: 1,
+		},
+	})
+	builder.WhereGt("skill_type", 1)
+	builder.WhereLt("skill_type", 1)
+	builder.WhereLike("condition", "vic")
+	if builder.String() != "SELECT `condition`,`skill_type` FROM `skill` WHERE `skill_type`=? AND skill_type IN (?,?) OR (skill_type=?) AND `skill_type`>? AND `skill_type`<? AND `condition` LIKE ?;" {
 		t.Fatalf("Error -- sql string: %s \n", builder.String())
 	}
 }
