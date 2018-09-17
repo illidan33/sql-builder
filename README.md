@@ -1,5 +1,5 @@
 # sql-builder
-a tool to create sql string for golang
+A tool to create sql string for golang
 
 # 安装
 

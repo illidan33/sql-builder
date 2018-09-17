@@ -188,7 +188,7 @@ func (build *InsertSqlBuilder) InsertByStruct(tableMap interface{}) {
 	build.handleStr = fmt.Sprintf("INSERT INTO `%s`(%s) VALUES(%s);", build.table, sqlStr, valStr)
 }
 
-func (build *SelectSqlBuilder) SelectByStruct(tableMap interface{}) {
+func (build *SelectSqlBuilder) SelectByStruct(tableMap interface{}, skipEmpty bool) {
 	if build.sqlType != SQL_TYPE_SELECT {
 		log.Fatalf("SQL type error")
 	}
@@ -211,7 +211,9 @@ func (build *SelectSqlBuilder) SelectByStruct(tableMap interface{}) {
 			fieldStr = fmt.Sprintf("%s,`%s`", fieldStr, dbTag)
 		}
 		value := valueType.Field(i).Interface()
-		if value != "" && value != 0 {
+		if skipEmpty == true && (value == "" || value == 0) {
+			continue
+		} else {
 			build.WhereEq(dbTag, value)
 		}
 	}
@@ -327,7 +329,7 @@ func (build *SqlBuilder) WhereOr(args []WhereOrCondition) {
 }
 
 // Build sql string with struct, whick has tag "db"
-func (build *SqlBuilder) WhereByStruct(tableMap interface{}) {
+func (build *SqlBuilder) WhereByStruct(tableMap interface{}, skipEmpty bool) {
 	tableType := reflect.TypeOf(tableMap)
 	valueType := reflect.ValueOf(tableMap)
 
@@ -340,9 +342,10 @@ func (build *SqlBuilder) WhereByStruct(tableMap interface{}) {
 			continue
 		}
 		value := valueType.Field(i).Interface()
-		if value != "" && value != 0 {
-			build.WhereEq(dbTag, value)
+		if skipEmpty == true && (value == "" || value == 0) {
+			continue
 		}
+		build.WhereEq(dbTag, value)
 	}
 }
 

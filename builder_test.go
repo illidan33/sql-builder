@@ -17,7 +17,7 @@ func TestSelectSqlBuilder_SelectByStruct(t *testing.T) {
 	}
 
 	builder := Select("skill")
-	builder.SelectByStruct(skill)
+	builder.SelectByStruct(skill, true)
 
 	if builder.String() != "SELECT `condition`,`desc`,`skill_type` FROM `skill` WHERE `skill_type`=?;" {
 		t.Fatalf("Error -- sql string: %s \n", builder.String())
@@ -89,7 +89,7 @@ func TestDeleteSqlBuilder_DeleteAndWhereByStruct(t *testing.T) {
 	}
 
 	builder := Delete("skill")
-	builder.WhereByStruct(skill)
+	builder.WhereByStruct(skill, true)
 
 	if builder.String() != "DELETE FROM `skill` WHERE `skill_type`=?;" {
 		t.Fatalf("Error -- sql string: %s \n", builder.String())
