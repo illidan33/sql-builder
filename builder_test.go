@@ -34,7 +34,7 @@ func TestSelectSqlBuilder_SelectByStruct(t *testing.T) {
 
 func TestSelect(t *testing.T) {
 	builder := Select("skill")
-	builder.SetSearchFields("`condition`,`skill_type`")
+	builder.SetSearchFields([]string{"condition", "skill_type"})
 	builder.WhereEq("skill_type", 1)
 	builder.WhereGt("skill_type", 5)
 	builder.WhereLt("skill_type", 10)
