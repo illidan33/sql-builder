@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"reflect"
+	"strings"
 )
 
 type SqlType string
@@ -111,6 +112,9 @@ func (build *sqlBuilder) init(tableName string, sqlType SqlType) *sqlBuilder {
 	build.table = tableName
 	build.flag = "?"
 	build.fields = "*"
+	build.handleStr = ""
+	build.whereStr = ""
+	build.args = nil
 
 	return build
 }
@@ -385,8 +389,9 @@ func (build *sqlBuilder) SetFlag(flag string) {
 }
 
 // Set search fields
-func (build *SelectSqlBuilder) SetSearchFields(selectField string) {
-	build.fields = selectField
+func (build *SelectSqlBuilder) SetSearchFields(selectFields []string) {
+	str := strings.Join(selectFields, "`,`")
+	build.fields = fmt.Sprintf("`%s`", str)
 }
 
 func (build *SelectSqlBuilder) Limit(offset int64, size int64) {
