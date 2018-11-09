@@ -159,9 +159,9 @@ func (build *UpdateSqlBuilder) UpdateSet(fieldName string, fieldValue interface{
 	}
 
 	if build.handleStr == "" {
-		build.handleStr = fmt.Sprintf("%s=%s", fieldName, build.flag)
+		build.handleStr = fmt.Sprintf("`%s`=%s", fieldName, build.flag)
 	} else {
-		build.handleStr = fmt.Sprintf("%s,%s=%s", build.handleStr, fieldName, build.flag)
+		build.handleStr = fmt.Sprintf("%s,`%s`=%s", build.handleStr, fieldName, build.flag)
 	}
 	build.args = append(build.args, fieldValue)
 }
