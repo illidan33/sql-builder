@@ -23,7 +23,7 @@ func TestSelectSqlBuilder_SelectByStruct(t *testing.T) {
 	builder := Select("skill")
 	builder.SelectByStruct(skill, true)
 
-	if builder.String() != "SELECT `condition`,`desc`,`skill_type`,`status` FROM `skill` WHERE `desc`=? AND `skill_type`=?;" {
+	if builder.String() != "SELECT `condition`,`desc`,`skill_type`,`status` FROM `skill`  WHERE `desc` = ? AND `skill_type` = ?;" {
 		t.Fatalf("Sql Error: %s \n", builder.String())
 	}
 	args := builder.Args()
@@ -34,6 +34,8 @@ func TestSelectSqlBuilder_SelectByStruct(t *testing.T) {
 
 func TestSelect(t *testing.T) {
 	builder := Select("skill")
+	builder.OrderBy("skill_type", ORDER_BY_ASC)
+	builder.Limit(0, 20)
 	builder.SetSearchFields([]string{"condition", "skill_type"})
 	builder.WhereEq("skill_type", 1)
 	builder.WhereGt("skill_type", 5)
@@ -51,12 +53,9 @@ func TestSelect(t *testing.T) {
 			FieldValue: "test desc",
 		},
 	})
-	// 注意一下使用顺序
-	builder.GroupBy("`id`,`skill_type`")
-	builder.OrderBy("`skill_type` ASC")
-	builder.Limit(0, 20)
 
-	if builder.String() != "SELECT `condition`,`skill_type` FROM `skill` WHERE (`skill_type`=? AND `skill_type`>? AND `skill_type`<? AND status IN (?,?) AND `condition` LIKE ?) OR (`desc` LIKE ? AND `desc` LIKE ?) GROUP BY `id`,`skill_type` ORDER BY `skill_type` ASC LIMIT 0,20;" {
+
+	if builder.String() != "SELECT `condition`,`skill_type` FROM `skill`  WHERE (`skill_type` = ? AND `skill_type` > ? AND `skill_type` < ? AND status IN (?,?) AND `condition`  LIKE  ?) OR (`desc` LIKE ? AND `desc` LIKE ?) ORDER BY `skill_type` ASC LIMIT 0,20;" {
 		t.Errorf("Sql Error: %s \n", builder.String())
 	}
 
@@ -80,7 +79,7 @@ func TestUpdateSqlBuilder_UpdateByStruct(t *testing.T) {
 	builder.WhereIn("status", []interface{}{1, 2})
 	builder.WhereLike("condition", "test")
 
-	if builder.String() != "UPDATE `skill` SET `desc`=?,`skill_type`=? WHERE `skill_type`=? AND status IN (?,?) AND `condition` LIKE ?;" {
+	if builder.String() != "UPDATE `skill` SET `desc`=?,`skill_type`=?  WHERE `skill_type` = ? AND status IN (?,?) AND `condition`  LIKE  ?;" {
 		t.Errorf("Sql Error: %s \n", builder.String())
 	}
 
@@ -118,7 +117,7 @@ func TestDeleteSqlBuilder_DeleteAndWhereByStruct(t *testing.T) {
 	builder := Delete("skill")
 	builder.WhereByStruct(skill, true)
 
-	if builder.String() != "DELETE FROM `skill` WHERE `skill_type`=?;" {
+	if builder.String() != "DELETE FROM `skill`  WHERE `skill_type` = ?;" {
 		t.Fatalf("Error -- sql string: %s \n", builder.String())
 	}
 }

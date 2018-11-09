@@ -8,6 +8,7 @@ import (
 )
 
 type SqlType string
+type OrderBy string
 type WhereType uint8
 
 const (
@@ -15,6 +16,8 @@ const (
 	SQL_TYPE_UPDATE SqlType = "UPDATE" // update
 	SQL_TYPE_SELECT SqlType = "SELECT" // select
 	SQL_TYPE_DELETE SqlType = "DELETE" // delete
+	ORDER_BY_ASC    OrderBy = "ASC"
+	ORDER_BY_DESC   OrderBy = "DESC"
 )
 
 const (
@@ -43,8 +46,13 @@ type sqlBuilder struct {
 	whereStr string
 	// 占位符/sql flag
 	flag string
-	// args for db.Exec
-	args []interface{}
+	// args for sql query
+	//args []interface{}
+
+	whereArgs  []interface{}
+	updateArgs []interface{}
+	limitArgs  []int64
+	orderArgs  []string
 }
 
 type whereBuilder struct {
@@ -114,7 +122,10 @@ func (build *sqlBuilder) init(tableName string, sqlType SqlType) *sqlBuilder {
 	build.fields = "*"
 	build.handleStr = ""
 	build.whereStr = ""
-	build.args = nil
+	build.whereArgs = nil
+	build.updateArgs = nil
+	build.limitArgs = nil
+	build.orderArgs = nil
 
 	return build
 }
@@ -147,7 +158,7 @@ func (build *UpdateSqlBuilder) UpdateByStruct(tableMap interface{}, skipEmpty bo
 		} else {
 			sqlStr = fmt.Sprintf("%s,`%s`=%s", sqlStr, dbTag, build.flag)
 		}
-		build.args = append(build.args, value)
+		build.updateArgs = append(build.updateArgs, value)
 	}
 	build.handleStr = sqlStr
 }
@@ -163,7 +174,7 @@ func (build *UpdateSqlBuilder) UpdateSet(fieldName string, fieldValue interface{
 	} else {
 		build.handleStr = fmt.Sprintf("%s,`%s`=%s", build.handleStr, fieldName, build.flag)
 	}
-	build.args = append(build.args, fieldValue)
+	build.updateArgs = append(build.updateArgs, fieldValue)
 }
 
 // Build sql string of insert by struct
@@ -193,7 +204,7 @@ func (build *InsertSqlBuilder) InsertByStruct(tableMap interface{}) {
 			sqlStr = fmt.Sprintf("%s,`%s`", sqlStr, dbTag)
 			valStr = fmt.Sprintf("%s,%s", valStr, build.flag)
 		}
-		build.args = append(build.args, tableValue.Field(i).Interface())
+		build.updateArgs = append(build.updateArgs, tableValue.Field(i).Interface())
 	}
 	build.handleStr = fmt.Sprintf("INSERT INTO `%s`(%s) VALUES(%s);", build.table, sqlStr, valStr)
 }
@@ -292,7 +303,7 @@ func (build *whereBuilder) WhereIn(fieldName string, args []interface{}) {
 		} else {
 			condition = fmt.Sprintf("%s,%s", condition, build.flag)
 		}
-		build.args = append(build.args, args[i])
+		build.whereArgs = append(build.whereArgs, args[i])
 	}
 
 	if build.whereStr == "" {
@@ -328,7 +339,7 @@ func (build *whereBuilder) WhereOr(args []WhereOrCondition) {
 		} else {
 			orStr = fmt.Sprintf("%s AND %s", orStr, conditionStr)
 		}
-		build.args = append(build.args, fieldValue)
+		build.whereArgs = append(build.whereArgs, fieldValue)
 	}
 
 	if build.whereStr == "" {
@@ -365,22 +376,31 @@ func (build *sqlBuilder) String() string {
 	if build.whereStr != "" {
 		whereStr = fmt.Sprintf(" WHERE %s", build.whereStr)
 	}
+
 	switch build.sqlType {
 	case SQL_TYPE_INSERT:
 		return build.handleStr
 	case SQL_TYPE_UPDATE:
-		return fmt.Sprintf("UPDATE `%s` SET %s%s;", build.table, build.handleStr, whereStr)
+		return fmt.Sprintf("UPDATE `%s` SET %s %s;", build.table, build.handleStr, whereStr)
 	case SQL_TYPE_SELECT:
-		return fmt.Sprintf("SELECT %s FROM `%s`%s;", build.fields, build.table, whereStr)
+		orderByStr := ""
+		if len(build.orderArgs) > 0 {
+			orderByStr = fmt.Sprintf(" ORDER BY %s", strings.Join(build.orderArgs, ","))
+		}
+		limitStr := ""
+		if len(build.limitArgs) == 2 && build.limitArgs[1] > 0 {
+			limitStr = fmt.Sprintf(" LIMIT %d,%d", build.limitArgs[0], build.limitArgs[1])
+		}
+		return fmt.Sprintf("SELECT %s FROM `%s` %s%s%s;", build.fields, build.table, whereStr, orderByStr, limitStr)
 	case SQL_TYPE_DELETE:
-		return fmt.Sprintf("DELETE FROM `%s`%s;", build.table, whereStr)
+		return fmt.Sprintf("DELETE FROM `%s` %s;", build.table, whereStr)
 	}
 	return ""
 }
 
 // Get all Args
 func (build *sqlBuilder) Args() []interface{} {
-	return build.args
+	return append(build.updateArgs, build.whereArgs...)
 }
 
 // Set sql flag
@@ -395,15 +415,12 @@ func (build *SelectSqlBuilder) SetSearchFields(selectFields []string) {
 }
 
 func (build *SelectSqlBuilder) Limit(offset int64, size int64) {
-	build.whereStr = fmt.Sprintf("%s LIMIT %d,%d", build.whereStr, offset, size)
+	build.limitArgs = append(build.limitArgs, offset)
+	build.limitArgs = append(build.limitArgs, size)
 }
 
-func (build *SelectSqlBuilder) GroupBy(fieldName string) {
-	build.whereStr = fmt.Sprintf("%s GROUP BY %s", build.whereStr, fieldName)
-}
-
-func (build *SelectSqlBuilder) OrderBy(orderBy string) {
-	build.whereStr = fmt.Sprintf("%s ORDER BY %s", build.whereStr, orderBy)
+func (build *SelectSqlBuilder) OrderBy(orderBy string, orderType OrderBy) {
+	build.orderArgs = append(build.orderArgs, fmt.Sprintf("`%s` %s", orderBy, orderType))
 }
 
 // Build condition string
@@ -427,13 +444,13 @@ func (build *whereBuilder) buildWhereCondition(fieldName string, whereType Where
 		break
 	}
 
-	conditionStr := fmt.Sprintf("`%s`%s%s", fieldName, condition, build.flag)
+	conditionStr := fmt.Sprintf("`%s` %s %s", fieldName, condition, build.flag)
 	if build.whereStr == "" {
 		build.whereStr = conditionStr
 	} else {
 		build.whereStr = fmt.Sprintf("%s AND %s", build.whereStr, conditionStr)
 	}
-	build.args = append(build.args, fieldValue)
+	build.whereArgs = append(build.whereArgs, fieldValue)
 }
 
 func getWhereTypeString(whereType WhereType) string {
